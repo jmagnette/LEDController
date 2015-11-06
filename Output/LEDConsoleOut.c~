@@ -6,7 +6,7 @@ struct RGB* outputGrid = NULL;
 void initRGBList(struct RGB* lineToInit);
 void initRGBListTo(struct RGB* lineToInit, struct RGB RGBValue);
 
-void outputCleanUp()
+void cleanUp()
 {
 	if (NULL != outputGrid)
 	{

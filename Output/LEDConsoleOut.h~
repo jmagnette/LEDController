@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include "../MainLib/LedRGB.h"
 
-void outputCleanUp();
+void cleanUp();
 void setMaxLineLength(unsigned short length);
 
 void setLed(unsigned short address, struct RGB RGBValue);

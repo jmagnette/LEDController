@@ -2,8 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "../Input/LEDInput.h"
-#include "LEDServer.h"
+#include "Input/LEDInput.h"
+#include "Server/LEDServer.h"
 
 
 int main ()
@@ -16,7 +16,8 @@ int main ()
 	int rslt = beginConsoleInput();
 	
 	serverClose();
-	return beginConsoleInput();
+	
+	return rslt;
 }
 
 

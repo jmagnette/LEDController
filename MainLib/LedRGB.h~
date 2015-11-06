@@ -10,7 +10,7 @@ struct RGB{
 struct Address{
 	unsigned short row;
 	unsigned short column;
-};
+}
 
 struct AddressableLED{
 	struct Address address;
