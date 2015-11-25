@@ -3,16 +3,14 @@
 unsigned short maxLineLength = 0;
 struct RGB* outputGrid = NULL;
 
+// Inner functions used to init the local RGBList
 void initRGBList(struct RGB* lineToInit);
 void initRGBListTo(struct RGB* lineToInit, struct RGB RGBValue);
 
 void outputCleanUp()
 {
-	if (NULL != outputGrid)
-	{
-		free(outputGrid);
-		outputGrid = NULL;
-	}
+	free(outputGrid);
+	outputGrid = NULL;
 }
 
 void setMaxLineLength(unsigned short length)
@@ -36,7 +34,7 @@ void setLed(unsigned short address, struct RGB RGBValue)
 	}
 }
 
-
+// inner function used to print one 'simulated LED' to the screen
 void printLed(Byte red, Byte green, Byte blue)
 {
 	printf("|\x1b[48;2;%u;%u;%um_\x1b[0m|  ",red,green,blue);
