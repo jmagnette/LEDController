@@ -16,4 +16,9 @@ struct AddressableLED{
 	struct Address address;
 	struct RGB ledValue;
 };
+
+struct LEDSequence{
+	unsigned short delay;
+	struct AddressableLED ledToChange[];
+};
 #endif
