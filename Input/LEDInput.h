@@ -1,7 +1,7 @@
 #ifndef LEDINPUT_H
 #define LEDINPUT_H
 
-#define MAXLEDINPUT 2
+#define MAXLEDINPUT 4
 #define _POSIX_C_SOURCE 199309L
 
 #include <stdio.h>
@@ -14,7 +14,9 @@
 enum E_LedInput
 {
 	EXAMPLES,
-	MANUAL
+	MANUAL,
+	FILE,
+	NETWORK
 };
 
 int beginConsoleInput();

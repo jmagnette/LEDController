@@ -22,6 +22,14 @@ int beginConsoleInput()
 				// launch method for manual input;
 				break;
 				
+			case FILE :
+				// launch method for file input;
+				break;
+				
+			case NETWORK :
+				// launch method for network input;
+				break;
+				
 			default :
 				fprintf(stderr,"Wrong user choice! closing program...\n");
 				return 1;
@@ -42,6 +50,8 @@ int chooseInput()
 	/*List all the possible input*/
 	printf("- Use examples (0)\n");
 	printf("- Manual input (1)\n");
+	printf("- File input (2)\n");
+	printf("- Network input (3)\n");
 	printf("- Exit program (any negative value)\n");
 	printf("Which one will it be ?");
 	fgets(userInput, sizeof(userInput), stdin);
