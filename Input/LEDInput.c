@@ -14,19 +14,19 @@ int beginConsoleInput()
 		/*according to the result of chooseInput, execute next task*/
 		switch (userchoice)
 		{
-			case EXAMPLES :
+			case LED_EXAMPLES :
 				exampleMenu();
 				break;
 			
-			case MANUAL :
+			case LED_MANUAL :
 				// launch method for manual input;
 				break;
 				
-			case FILE :
+			case LED_FILE :
 				// launch method for file input;
 				break;
 				
-			case NETWORK :
+			case LED_NETWORK :
 				// launch method for network input;
 				break;
 				

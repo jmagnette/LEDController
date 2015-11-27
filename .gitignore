@@ -1,2 +1,6 @@
 LEDTest
 *~
+Debug/
+.cproject
+.metadata/
+.project

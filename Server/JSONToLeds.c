@@ -1,13 +1,13 @@
 #include "JSONToLeds.h"
 
-void extractRGBFromFile(*struct LEDSequence extractedSequences, char* jSONFilePath)
+int extractRGBFromFile(struct LEDSequence extractedSequences[], char* jSONFilePath)
 {
-
+	return 0;
 }
 
-void extractRGBFromString(*struct LEDSequence extractedSequences, char* jSONString)
+int extractRGBFromString(struct LEDSequence extractedSequences[], char* jSONString)
 {
-
+	return 0;
 }
 
 

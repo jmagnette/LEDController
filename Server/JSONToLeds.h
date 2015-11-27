@@ -19,7 +19,7 @@ enum jsonToLedErr
 	
 	Note: the sequences array will be terminated with a null pointer
 */
-int extractRGBFromFile(*struct LEDSequence extractedSequences, char* jSONFilePath);
+int extractRGBFromFile(struct LEDSequence extractedSequences[], char* jSONFilePath);
 
 /*
 	Function that will handle the JSON code and will translate it to a LEDSequence array.
@@ -29,6 +29,6 @@ int extractRGBFromFile(*struct LEDSequence extractedSequences, char* jSONFilePat
 	
 	Note: the sequences array will be terminated with a null pointer
 */
-int extractRGBFromString(*struct LEDSequence extractedSequences, char* jSONString); 
+int extractRGBFromString(struct LEDSequence extractedSequences[], char* jSONString);
 
 #endif

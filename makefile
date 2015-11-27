@@ -9,7 +9,7 @@ LIB = MainLib/
 
 all: $(EXEC) clean
 
-LEDTest: LEDTest.o LEDServer.o LEDInput.o LEDConsoleOut.o
+LEDTest: LEDTest.o LEDServer.o LEDInput.o LEDConsoleOut.o JSONToLeds.o
 	$(CC) $^ -o $@ $(LDFLAGS)
 	
 LEDTest.o: LEDTest.c $(MID)LEDServer.h $(IN)LEDInput.h
@@ -23,6 +23,9 @@ LEDInput.o: $(IN)LEDInput.c $(IN)LEDInput.h $(MID)LEDServer.h $(LIB)Byte.h $(LIB
 	
 LEDConsoleOut.o: $(OUT)LEDConsoleOut.c $(OUT)LEDConsoleOut.h $(LIB)Byte.h $(LIB)LedRGB.h
 	$(CC) -c $< -o $@ $(CFLAGS)
+	
+JSONToLeds.o: $(MID)JSONToLeds.c $(MID)JSONToLeds.h $(LIB)libjsmn.a $(LIB)LedRGB.h
+	$(CC) -c $< -o $@ $(CFLAGS) -ljsmn
 	
 clean:
 	rm -rf *.o

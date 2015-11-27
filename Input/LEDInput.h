@@ -13,10 +13,10 @@
 
 enum E_LedInput
 {
-	EXAMPLES,
-	MANUAL,
-	FILE,
-	NETWORK
+	LED_EXAMPLES,
+	LED_MANUAL,
+	LED_FILE,
+	LED_NETWORK
 };
 
 int beginConsoleInput();
