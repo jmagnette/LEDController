@@ -30,6 +30,6 @@ struct AddressableLED{
 */
 struct LEDSequence{
 	unsigned short delay;
-	struct AddressableLED ledToChange[];
+	struct AddressableLED **ledToChange;
 };
 #endif

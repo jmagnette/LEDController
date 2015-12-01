@@ -23,7 +23,11 @@ int beginConsoleInput()
 				break;
 				
 			case LED_FILE :
+
 				// launch method for file input;
+				initLEDSequences();
+				extractRGBFromFile("./Input/Sequences.json");
+				freeLEDSequences();
 				break;
 				
 			case LED_NETWORK :

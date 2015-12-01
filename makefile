@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11
+CFLAGS = -Wall -Wextra -std=c11 
 LDFLAGS = 
 EXEC = LEDTest
 IN = Input/
@@ -7,9 +7,15 @@ OUT = Output/
 MID = Server/
 LIB = MainLib/
 
+DEBUG?=0
+
+ifeq ($(DEBUG),1)
+	CFLAGS += -g -O0
+endif
+
 all: $(EXEC) clean
 
-LEDTest: LEDTest.o LEDServer.o LEDInput.o LEDConsoleOut.o JSONToLeds.o
+LEDTest: LEDTest.o LEDServer.o LEDInput.o LEDConsoleOut.o JSONToLeds.o $(LIB)libjsmn.a
 	$(CC) $^ -o $@ $(LDFLAGS)
 	
 LEDTest.o: LEDTest.c $(MID)LEDServer.h $(IN)LEDInput.h

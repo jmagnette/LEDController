@@ -10,6 +10,7 @@
 #include <time.h>
 #include "../MainLib/LedRGB.h"
 #include "../Server/LEDServer.h"
+#include "../Server/JSONToLeds.h"
 
 enum E_LedInput
 {
