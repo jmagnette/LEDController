@@ -10,7 +10,7 @@ LIB = MainLib/
 DEBUG?=0
 
 ifeq ($(DEBUG),1)
-	CFLAGS += -g -O0
+	CFLAGS += -g
 endif
 
 all: $(EXEC) clean
