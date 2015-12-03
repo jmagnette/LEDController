@@ -1,7 +1,10 @@
 #include "LEDConsoleOut.h"
 
-unsigned short maxLineLength = 0;
-struct RGB* outputGrid = NULL;
+static unsigned short rowLength = 0;
+static unsigned short columnLength = 0;
+static unsigned short numberOfLeds = 0;
+
+static struct RGB* outputGrid = NULL;
 
 // Inner functions used to init the local RGBList
 void initRGBList(struct RGB* lineToInit);
@@ -13,20 +16,22 @@ void outputCleanUp()
 	outputGrid = NULL;
 }
 
-void setMaxLineLength(unsigned short length)
+void setSimulatedSize(unsigned short row, unsigned short column)
 {
-	maxLineLength = length;
+	rowLength = row;
+	columnLength = column;
+	numberOfLeds = rowLength * columnLength;
 	if (NULL != outputGrid)
 	{
 		free(outputGrid);
 	}
-	outputGrid = malloc(maxLineLength * sizeof(*outputGrid) );
+	outputGrid = malloc(numberOfLeds * sizeof(*outputGrid) );
 	initRGBList(outputGrid);
 } 
 
 void setLed(unsigned short address, struct RGB RGBValue)
 {
-	if (address < maxLineLength)
+	if (address < (rowLength * columnLength))
 	{
 		outputGrid[address].red = RGBValue.red;
 		outputGrid[address].green = RGBValue.green;
@@ -43,9 +48,13 @@ void printLed(Byte red, Byte green, Byte blue)
 void printLedGrid()
 {
 	system("clear");
-	for(int index = 0; index < maxLineLength; ++index)
+	for(int index = 0; index < numberOfLeds; ++index)
 	{
 		printLed(outputGrid[index].red, outputGrid[index].green, outputGrid[index].blue);
+		if (0 == (index+1)%columnLength )
+		{
+			printf("\n");
+		}
 	}
 	printf("\n");
 	fflush(stdout);
@@ -58,7 +67,7 @@ void initRGBList(struct RGB* lineToInit)
 
 void initRGBListTo(struct RGB* lineToInit, struct RGB RGBValue)
 {
-	for(int index = 0; index < maxLineLength; ++index)
+	for(int index = 0; index < numberOfLeds; ++index)
 	{
 		lineToInit[index].red = RGBValue.red;
 		lineToInit[index].green = RGBValue.green;

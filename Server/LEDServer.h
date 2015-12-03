@@ -26,4 +26,7 @@ void serverClose();
 */
 void translateToOutput(struct AddressableLED** sequence, unsigned short sequenceLength);
 
+unsigned short getRowSize();
+unsigned short getColumnSize();
+
 #endif

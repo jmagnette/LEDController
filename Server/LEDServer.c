@@ -1,6 +1,6 @@
 #include "LEDServer.h"
 
-unsigned short numberOfRows = 0, numberOfColumns = 0;
+static unsigned short numberOfRows = 0, numberOfColumns = 0;
 
 void askForOutputLength()
 {
@@ -20,7 +20,7 @@ void askForOutputLength()
 	numberOfRows = tmpRows;
 	numberOfColumns = tmpColumns;
 	
-	setMaxLineLength(numberOfRows * numberOfColumns);
+	setSimulatedSize(numberOfRows ,numberOfColumns);
 }
 
 void serverClose()
@@ -31,11 +31,8 @@ void serverClose()
 
 void translateToOutput(struct AddressableLED** sequence, unsigned short sequenceLength)
 {
-	printf("New sequence\n");
 	for (int index = 0; index < sequenceLength; index ++)
 	{
-		printf("   LED value : %u x %u , R= %u , G= %u , B= %u \n",sequence[index]->address.row, sequence[index]->address.column,
-				sequence[index]->ledValue.red, sequence[index]->ledValue.green, sequence[index]->ledValue.blue);
 		if (sequence[index]->address.row < numberOfRows && sequence[index]->address.column < numberOfColumns)
 		{
 			setLed( (sequence[index]->address.row * numberOfColumns + sequence[index]->address.column), sequence[index]->ledValue);
@@ -43,3 +40,14 @@ void translateToOutput(struct AddressableLED** sequence, unsigned short sequence
 	} 
 	printLedGrid();
 }
+
+unsigned short getRowSize()
+{
+	return numberOfRows;
+}
+unsigned short getColumnSize()
+{
+	return numberOfColumns;
+}
+
+

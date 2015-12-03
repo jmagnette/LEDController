@@ -14,7 +14,7 @@ void outputCleanUp();
 /*
 	Function used to set the local size of the 'simulated LED strip' (used for display)
 */
-void setMaxLineLength(unsigned short length);
+void setSimulatedSize(unsigned short row, unsigned short column);
 
 /*
 	Function that will change the value of a local Led, given its address and its RGB value.

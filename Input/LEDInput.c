@@ -1,12 +1,13 @@
 #include "LEDInput.h"
 
-int chooseInput();
-void exampleMenu();
-void manualMenu();
-void fileMenu();
-void networkMenu();
-void printBlinkingExample();
-void printCyclingExample();
+static int chooseInput();
+static void exampleMenu();
+static void manualMenu();
+static void fileMenu();
+static void networkMenu();
+static void printBlinkingExample();
+static void printCyclingExample();
+static void printRandomFillingExample();
 
 int beginConsoleInput()
 {
@@ -80,12 +81,13 @@ void exampleMenu()
 		printf("the choices are the following:\n");
 		printf("- Blinking Led (0)\n");
 		printf("- Cycling Led (1)\n");
+		printf("- Random filling Led (2)\n");
 		printf("- Back to menu (any negative value)\n");
 	
 		fgets(userInput, sizeof(userInput), stdin);
 		sscanf(userInput, "%d", &inputChoice);	
 		
-		if (inputChoice > 1)
+		if (inputChoice > 2)
 			printf("please enter a correct value!\n");
 		else if (inputChoice < 0)
 			break;
@@ -99,6 +101,10 @@ void exampleMenu()
 					
 				case 1 :
 					printCyclingExample();
+					break;
+
+				case 2 :
+					printRandomFillingExample();
 					break;
 			}
 		}
@@ -266,3 +272,51 @@ void printCyclingExample()
 	free(sequence[1]);
 }
 
+void printRandomFillingExample()
+{
+	time_t t;
+	srand((unsigned) time(&t));
+
+	unsigned short rows = getRowSize();
+	unsigned short columns = getColumnSize();
+	unsigned short nbrOfLEDsToGenerate = rows * columns;
+	struct RGB randomColor = { 0,0,0 };
+	struct RGB initialRGB = { 0, 0, 0};
+
+	struct AddressableLED *sequence[2];
+	sequence[0] = malloc(sizeof(struct AddressableLED));
+	sequence[1] = malloc(sizeof(struct AddressableLED));
+
+	while(0 < nbrOfLEDsToGenerate)
+	{
+		randomColor.red = rand() % 206 + 50;
+		randomColor.green = rand() % 206 + 50;
+		randomColor.blue = rand() % 206 + 50;
+
+		for (unsigned short position = 0; position < nbrOfLEDsToGenerate; ++position )
+		{
+			if (0 != position)
+			{
+				sequence[0]->address.row = (position - 1) / columns;
+				sequence[0]->address.column = (position - 1) % columns;
+			}
+			else
+			{
+				sequence[0]->address.row = position / columns;
+				sequence[0]->address.column = position % columns;
+			}
+			sequence[0]->ledValue = initialRGB;
+			sequence[1]->address.row = position / columns;
+			sequence[1]->address.column = position % columns;
+			sequence[1]->ledValue = randomColor;
+
+			translateToOutput(&sequence[0], 2);
+			nanosleep(&(struct timespec){0,100*1000000},NULL);
+		}
+
+		--nbrOfLEDsToGenerate;
+	}
+
+	free(sequence[0]);
+	free(sequence[1]);
+}
