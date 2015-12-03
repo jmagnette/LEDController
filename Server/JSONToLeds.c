@@ -1,8 +1,8 @@
 #include "JSONToLeds.h"
 
-struct LEDSequence **extractedSequences = NULL;
-unsigned short isInitialized = 0;
-unsigned int numberOfSequences = 0, numberOfLEDValues = 0;
+static struct LEDSequence **extractedSequences = NULL;
+static unsigned short isInitialized = 0;
+static unsigned int numberOfSequences = 0;
 
 
 static int strTokenCompare(const char *jSONString, jsmntok_t *token, const char *cprString)
@@ -23,33 +23,41 @@ static int addNewSequence(int delay)
 	isInitialized = 0;
 
 	++numberOfSequences;
-	extractedSequences = realloc(extractedSequences, (numberOfSequences + 1) * sizeof(struct LEDSequence*));
-	if (NULL != extractedSequences)
+
+	struct LEDSequence **tmpSequences;
+	tmpSequences = realloc(extractedSequences, (numberOfSequences + 1) * sizeof(struct LEDSequence*));
+	if (NULL != tmpSequences)
 	{
+		extractedSequences = tmpSequences;
+		tmpSequences = NULL;
 		extractedSequences[numberOfSequences - 1] = malloc(sizeof(struct AddressableLED));
 		if (NULL != extractedSequences[numberOfSequences - 1])
 		{
 			extractedSequences[numberOfSequences - 1]->delay = (unsigned short) delay;
+			extractedSequences[numberOfSequences - 1]->sequenceLength = 0;
 			extractedSequences[numberOfSequences - 1]->ledToChange = NULL;
 			extractedSequences[numberOfSequences] = NULL;
 
-			numberOfLEDValues = 0;
 			return 0;
 		}
 	}
 
+	fprintf(stderr,"Not enough memory, cannot allocate more.\n");
 	freeLEDSequences();
 	return ALLOCATION_ERROR;
 }
 
 static int appendToCurrentSequence(const struct AddressableLED ledValues)
 {
-	++numberOfLEDValues;
+	extractedSequences[numberOfSequences - 1]->sequenceLength += 1;
+	int numberOfLEDValues = extractedSequences[numberOfSequences - 1]->sequenceLength;
 
-	extractedSequences[numberOfSequences - 1]->ledToChange = realloc(extractedSequences[numberOfSequences - 1]->ledToChange, (numberOfLEDValues + 1) * sizeof(struct AddressableLED*));
+	struct AddressableLED **tmpLedValues;
+	tmpLedValues = realloc(extractedSequences[numberOfSequences - 1]->ledToChange, (numberOfLEDValues + 1) * sizeof(struct AddressableLED*));
 
-	if (NULL != extractedSequences[numberOfSequences - 1]->ledToChange)
+	if (NULL != tmpLedValues)
 	{
+		extractedSequences[numberOfSequences - 1]->ledToChange = tmpLedValues;
 		extractedSequences[numberOfSequences - 1]->ledToChange[numberOfLEDValues - 1] = malloc(sizeof(struct AddressableLED));
 		if (NULL != extractedSequences[numberOfSequences - 1]->ledToChange[numberOfLEDValues - 1])
 		{
@@ -65,19 +73,20 @@ static int appendToCurrentSequence(const struct AddressableLED ledValues)
 
 	}
 
+	fprintf(stderr,"Not enough memory, cannot allocate more.\n");
 	freeLEDSequences();
 	return ALLOCATION_ERROR;
 }
 
-static void incorrectJSONHandler(char* expectedType, jsmntok_t *tokenList, int indexFaultyToken)
+static void incorrectJSONHandler(char* expectedType, jsmntok_t **tokenList, int indexFaultyToken)
 {
-	fprintf(stderr, "Incorrect JSON format at character  %d, was expecting %s.\n", tokenList[indexFaultyToken].start, expectedType);
-	free(tokenList);
-	tokenList = NULL;
+	fprintf(stderr, "Incorrect JSON format at character %d, was expecting %s.\n", (*tokenList)[indexFaultyToken].start, expectedType);
+	free(*tokenList);
+	*tokenList = NULL;
 	freeLEDSequences();
 }
 
-int extractRGBFromFile(char* jSONFilePath)
+int extractRGBFromFile(char* jSONFilePath, struct LEDSequence*** outSequences)
 {
 	FILE *jSONFile;
 	char *buffer;
@@ -85,7 +94,11 @@ int extractRGBFromFile(char* jSONFilePath)
 
 	jSONFile = fopen(jSONFilePath,"r");
 	if (NULL == jSONFile)
+	{
+		fprintf(stderr,"Cannot open %s \nError number : %d\n",jSONFilePath, errno);
 		return OPEN_FILE_ERROR;
+	}
+
 
 	fseek(jSONFile, 0L, SEEK_END);
 	length = ftell(jSONFile);
@@ -93,19 +106,25 @@ int extractRGBFromFile(char* jSONFilePath)
 
 	buffer = malloc((length + 1) * sizeof(char));
 	if (NULL == buffer)
+	{
+		fprintf(stderr,"Not enough memory, cannot allocate more.\n");
+		fclose(jSONFile);
 		return ALLOCATION_ERROR;
+	}
+
 
 	fread(buffer, sizeof(char), length, jSONFile);
 	buffer[length] = '\0';
 
 	if (0 != fclose(jSONFile) )
 	{
+		fprintf(stderr,"Cannot close %s \nError number : %d\n",jSONFilePath, errno);
 		free(buffer);
 		buffer = NULL;
 		return CLOSE_FILE_ERROR;
 	}
 
-	int result = extractRGBFromString(buffer);
+	int result = extractRGBFromString(buffer, outSequences);
 
 	if (0 != result)
 	{
@@ -115,10 +134,13 @@ int extractRGBFromFile(char* jSONFilePath)
 	return result;
 }
 
-int extractRGBFromString(char* jSONString)
+int extractRGBFromString(char* jSONString, struct LEDSequence*** outSequences)
 {
 	if (0 == isInitialized)
+	{
+		fprintf(stderr,"The sequences were not initialized, please call 'initLEDSequences()' first.\n");
 		return LEDSEQUENCES_NOT_INITIALIZED;
+	}
 
 	int nbrOfToken;
 	jsmn_parser parser;
@@ -128,7 +150,10 @@ int extractRGBFromString(char* jSONString)
 
 	nbrOfToken = jsmn_parse(&parser, jSONString, strlen(jSONString), NULL, 0);
 	if (nbrOfToken < 0)
+	{
+		fprintf(stderr,"JSON error : %d\n",nbrOfToken);
 		return INVALID_JSON;
+	}
 
 	jsmn_init(&parser);
 	tokenList = malloc((nbrOfToken)* sizeof(jsmntok_t));
@@ -142,7 +167,7 @@ int extractRGBFromString(char* jSONString)
 
 	if (nbrOfToken < 1 || tokenList[0].type != JSMN_OBJECT)
 	{
-		fprintf(stderr,"Expecting object !\n");
+		fprintf(stderr,"Expecting starting object in file !\n");
 		return INVALID_JSON;
 	}
 
@@ -169,13 +194,12 @@ int extractRGBFromString(char* jSONString)
 			}
 			++tokenIndex;
 
-			printf("Number of child in SEQ array : %d \n", tokenList[tokenIndex].size);
 			int nbrOfSeq = tokenList[tokenIndex].size;
 			for (int seqIndex = 0; seqIndex < nbrOfSeq; ++seqIndex)
 			{
 				if (JSMN_OBJECT != tokenList[tokenIndex + 1].type)
 				{
-					incorrectJSONHandler("Object", tokenList, tokenIndex + 1);
+					incorrectJSONHandler("Object", &tokenList, tokenIndex + 1);
 					return INVALID_JSON;
 				}
 				else
@@ -202,7 +226,6 @@ int extractRGBFromString(char* jSONString)
 								&& JSMN_ARRAY == tokenList[tokenIndex + 1].type)
 						{
 							++tokenIndex;
-							printf("Number of child in LED array : %d \n", tokenList[tokenIndex].size);
 
 							struct AddressableLED tmpAdrrLed = { {0,0} , {0,0,0} };
 							int nbrOfLeds = tokenList[tokenIndex].size;
@@ -211,7 +234,7 @@ int extractRGBFromString(char* jSONString)
 								++tokenIndex;
 								if (JSMN_OBJECT != tokenList[tokenIndex].type)
 								{
-									incorrectJSONHandler("Object", tokenList, tokenIndex);
+									incorrectJSONHandler("Object", &tokenList, tokenIndex);
 									return INVALID_JSON;
 								}
 								++tokenIndex;
@@ -226,7 +249,7 @@ int extractRGBFromString(char* jSONString)
 										|| 0 != strTokenCompare(jSONString, &tokenList[tokenIndex + 6], "B")
 										|| JSMN_PRIMITIVE != tokenList[tokenIndex + 7].type  )
 								{
-									incorrectJSONHandler("LED value (in the form Addr:String - Red:Byte - Green:Byte - Blue:Byte)", tokenList, tokenIndex);
+									incorrectJSONHandler("LED value (in the form Addr:String - Red:Byte - Green:Byte - Blue:Byte)", &tokenList, tokenIndex);
 									return INVALID_JSON;
 								}
 
@@ -238,7 +261,7 @@ int extractRGBFromString(char* jSONString)
 								char *subString = strtok(addrString, "x");
 								if (NULL == subString)
 								{
-									incorrectJSONHandler("Addr with form : axb", tokenList, tokenIndex + 1);
+									incorrectJSONHandler("Addr with form : axb", &tokenList, tokenIndex + 1);
 									return INVALID_JSON;
 								}
 								tmpAdrrLed.address.row = (unsigned short) atoi(subString);
@@ -246,7 +269,7 @@ int extractRGBFromString(char* jSONString)
 								subString = strtok(NULL, "x");
 								if (NULL == subString)
 								{
-									incorrectJSONHandler("Addr with form : axb", tokenList, tokenIndex + 1);
+									incorrectJSONHandler("Addr with form : axb", &tokenList, tokenIndex + 1);
 									return INVALID_JSON;
 								}
 								tmpAdrrLed.address.column = (unsigned short) atoi(subString);
@@ -285,14 +308,14 @@ int extractRGBFromString(char* jSONString)
 						}
 						else
 						{
-							incorrectJSONHandler("Led/Array", tokenList, tokenIndex);
+							incorrectJSONHandler("Led/Array", &tokenList, tokenIndex);
 							return INVALID_JSON;
 						}
 
 					}
 					else
 					{
-						incorrectJSONHandler("Delay", tokenList, tokenIndex);
+						incorrectJSONHandler("Delay", &tokenList, tokenIndex);
 						return INVALID_JSON;
 					}
 
@@ -302,7 +325,7 @@ int extractRGBFromString(char* jSONString)
 		}
 	}
 
-
+	*outSequences = extractedSequences;
 	free(tokenList);
 	tokenList = NULL;
 	isInitialized = 0;
@@ -310,7 +333,7 @@ int extractRGBFromString(char* jSONString)
 	return 0;
 }
 
-struct LEDSequence** initLEDSequences()
+void initLEDSequences()
 {
 	freeLEDSequences();
 
@@ -320,8 +343,6 @@ struct LEDSequence** initLEDSequences()
 		extractedSequences[0] = NULL;
 		isInitialized = 1;
 	}
-
-	return extractedSequences;
 }
 
 void freeLEDSequences()

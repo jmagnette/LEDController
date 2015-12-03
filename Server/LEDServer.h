@@ -24,6 +24,6 @@ void serverClose();
 /*
 	Function used to take a sequence of LED value and translate it for output (+ sending it)
 */
-void translateToOutput(struct AddressableLED* sequence, unsigned short sequenceLength);
+void translateToOutput(struct AddressableLED** sequence, unsigned short sequenceLength);
 
 #endif

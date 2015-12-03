@@ -3,6 +3,8 @@
 int chooseInput();
 void exampleMenu();
 void manualMenu();
+void fileMenu();
+void networkMenu();
 void printBlinkingExample();
 void printCyclingExample();
 
@@ -23,11 +25,7 @@ int beginConsoleInput()
 				break;
 				
 			case LED_FILE :
-
-				// launch method for file input;
-				initLEDSequences();
-				extractRGBFromFile("./Input/Sequences.json");
-				freeLEDSequences();
+				fileMenu();
 				break;
 				
 			case LED_NETWORK :
@@ -105,7 +103,6 @@ void exampleMenu()
 			}
 		}
 	}
-
 }
 
 void manualMenu()
@@ -148,26 +145,84 @@ void manualMenu()
 	}
 }
 
+void fileMenu()
+{
+	char userInput[100];
+
+	printf("___File input_________________________________\n");
+	printf("Please enter the path of the desired file (with extension):\n");
+	printf("(or enter empty string to go back to menu)\n");
+
+	fgets(userInput, sizeof(userInput), stdin);
+	char *filePath = malloc(strlen(userInput) * sizeof(char));
+	if (NULL == filePath)
+	{
+		fprintf(stderr,"Not enough memory, cannot allocate more.\n");
+		return;
+	}
+	sscanf(userInput, "%[^\n]", filePath);
+
+	if (0 < strlen(filePath))
+	{
+		struct LEDSequence **sequencesToShow = NULL;
+		initLEDSequences();
+
+		if (0 == extractRGBFromFile(filePath, &sequencesToShow))
+		{
+			printf("The sequences were successfully extracted !\n");
+			printf("How many time do you want to play those ?\n");
+			printf("(entering a negative number or zero will get you back to the menu)\n");
+			int numberOfLoops = 0;
+
+			fgets(userInput, sizeof(userInput), stdin);
+			sscanf(userInput, "%d", &numberOfLoops);
+
+			int firstSequence = 1;
+			for(int loopCounter = 0; loopCounter < numberOfLoops; loopCounter++)
+			{
+				int index = 0;
+				while(NULL != sequencesToShow[index])
+				{
+					if(0 == firstSequence)
+					{
+						long delay = (sequencesToShow[index]->delay)*1000000;
+						nanosleep(&(struct timespec){delay/1000000000,delay%1000000000},NULL);
+					}
+					else
+					{
+						firstSequence = 0;
+					}
+
+					translateToOutput(sequencesToShow[index]->ledToChange, sequencesToShow[index]->sequenceLength);
+					++index;
+				}
+			}
+
+			freeLEDSequences();
+			sequencesToShow = NULL;
+		}
+	}
+	free(filePath);
+}
+
+void networkMenu()
+{
+
+}
 
 void printBlinkingExample()
 {	
 	unsigned short nbOfFirstInput = 1;
-	struct AddressableLED firstInput[] =
-	{
-		{ {0,1} , {255,100,0} }
-	};
+	struct AddressableLED* firstInput = &(struct AddressableLED){ {0,1} , {255,100,0} };
 	
 	unsigned short nbOfSecondInput = 1;
-	struct AddressableLED secondInput[] =
-	{
-		{ {0,1} , {0,0,0} }
-	};
+	struct AddressableLED* secondInput = &(struct AddressableLED){ {0,1} , {0,0,0}  };
 	
 	for(int index = 0; index < 10; index ++)
 	{
-		translateToOutput(firstInput, nbOfFirstInput);
+		translateToOutput(&firstInput, nbOfFirstInput);
 		nanosleep(&(struct timespec){0,500*1000000},NULL);
-		translateToOutput(secondInput, nbOfSecondInput);
+		translateToOutput(&secondInput, nbOfSecondInput);
 		nanosleep(&(struct timespec){0,500*1000000},NULL);
 	}
 }
@@ -179,32 +234,35 @@ void printCyclingExample()
 	
 	struct RGB initialRGB = { 0, 0, 0};
 	struct RGB loadingRGB = { 165, 242, 243};
-	
-	struct AddressableLED sequence[2]; 
-	
+	struct AddressableLED *sequence[2];
+	sequence[0] = malloc(sizeof(struct AddressableLED));
+	sequence[1] = malloc(sizeof(struct AddressableLED));
+
 	for(int loopNumber = 0; loopNumber < 5; ++loopNumber)
 	{
 		for(unsigned short index = 0; index < (row * column) ; ++index)
 		{
 			if (0 == index)
 			{
-				sequence[0].address.row = row - 1;
-				sequence[0].address.column = column -1;
+				sequence[0]->address.row = row - 1;
+				sequence[0]->address.column = column -1;
 			}
 			else
 			{
-				sequence[0].address.row = (index - 1) / column;
-				sequence[0].address.column = (index - 1) % column;
+				sequence[0]->address.row = (index - 1) / column;
+				sequence[0]->address.column = (index - 1) % column;
 			}
 			
-			sequence[0].ledValue = initialRGB;
-			sequence[1].address.row = index / column;
-			sequence[1].address.column = index % column;
-			sequence[1].ledValue = loadingRGB;
+			sequence[0]->ledValue = initialRGB;
+			sequence[1]->address.row = index / column;
+			sequence[1]->address.column = index % column;
+			sequence[1]->ledValue = loadingRGB;
 			
-			translateToOutput(sequence, 2);
+			translateToOutput(&sequence[0], 2);
 			nanosleep(&(struct timespec){0,200*1000000},NULL);
 		}
 	}	
+	free(sequence[0]);
+	free(sequence[1]);
 }
 

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 enum jsonToLedErr
 {
@@ -21,9 +22,12 @@ enum jsonToLedErr
 	initLEDSequences() has to be called first each time.
 	returns 0 if all OK, a jsonToLedErr enum value otherwise.
 	
+	outSequences will contain the extracted sequences
+	Will let the outSequences untouched if something goes wrong
+
 	Note: the sequences array will be and has to be terminated with a null pointer
 */
-int extractRGBFromFile(char* jSONFilePath);
+int extractRGBFromFile(char* jSONFilePath, struct LEDSequence*** outSequences);
 
 /*
 	Function that will handle the JSON code and will translate it to a LEDSequence array.
@@ -31,21 +35,21 @@ int extractRGBFromFile(char* jSONFilePath);
 	initLEDSequences() has to be called first each time.
 	returns 0 if all OK, a jsonToLedErr enum value otherwise.
 	
+	outSequences will contain the extracted sequences
+	Will let the outSequences untouched if something goes wrong
+
 	Note: the sequences array will be and has to be terminated with a null pointer
 */
-int extractRGBFromString(char* jSONString);
+int extractRGBFromString(char* jSONString, struct LEDSequence*** outSequences);
 
 /*
  * Function that will handle the initialization of the inner LEDSequences array
- * Will return a pointer to its first 'object'
  * The array will be NULL terminated and will contains one empty element.
- *
- * Will return a NULL pointer if something goes wrong
  *
  * !!Beware!! dynamic allocation will be used ! Please call freeLEDSequences() when done with the LEDSequences
  *
  */
-struct LEDSequence** initLEDSequences();
+void initLEDSequences();
 
 /*
  * Function that will handle the freeing of the memory used by the inner extractedSequences array
