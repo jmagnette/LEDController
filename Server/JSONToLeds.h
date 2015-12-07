@@ -1,7 +1,7 @@
 #ifndef JSONTOLEDS_H
 #define JSONTOLEDS_H
-#include "../MainLib/LedRGB.h"
-#include "../MainLib/jsmn.h"
+#include "../MainLib/include/LedRGB.h"
+#include "../MainLib/include/jsmn.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

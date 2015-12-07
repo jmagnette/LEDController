@@ -8,7 +8,7 @@
 
 #include <time.h>
 #include "../Output/LEDConsoleOut.h"
-#include "../MainLib/LedRGB.h"
+#include "../MainLib/include/LedRGB.h"
 
 /*
 	Temporary function used until networking is in place

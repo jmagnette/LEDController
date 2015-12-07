@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "../MainLib/LedRGB.h"
+#include "../MainLib/include/LedRGB.h"
 
 /*
 	Function that will handle all the cleanup task to do on the output side (free memory)

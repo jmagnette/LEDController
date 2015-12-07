@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
-#include "../MainLib/LedRGB.h"
+#include "../MainLib/include/LedRGB.h"
 #include "../Server/LEDServer.h"
 #include "../Server/JSONToLeds.h"
 
