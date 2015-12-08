@@ -2,7 +2,10 @@
 #define LEDINPUT_H
 
 #define MAXLEDINPUT 4
-#define _POSIX_C_SOURCE 199309L
+
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
 
 #include <stdio.h>
 #include <string.h>

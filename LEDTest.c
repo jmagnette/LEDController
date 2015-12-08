@@ -11,8 +11,6 @@ int main ()
 	system("clear");
 	printf("Hello, welcome to our LED test program.\n");
 	
-	askForOutputLength();
-	
 	int rslt = beginConsoleInput();
 	
 	serverClose();
