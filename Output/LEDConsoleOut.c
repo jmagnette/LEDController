@@ -44,7 +44,7 @@ int main()
 	printf("(grid size formatted as (a x b), a = 1 for a line. Default is %d x %d, enter nothing to keep default)\n", DEFAULT_ROW_NUMBER, DEFAULT_COLUMN_NUMBER);
 	char userInput[100];
 
-	short tmpRows = 0, tmpColumns = 0;
+	unsigned short tmpRows = 0, tmpColumns = 0;
 	while (0 >= tmpRows || 0 >= tmpColumns)
 	{
 		fgets(userInput, sizeof(userInput), stdin);
