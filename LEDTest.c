@@ -10,6 +10,8 @@ int main ()
 {
 	system("clear");
 	printf("Hello, welcome to our LED test program.\n");
+
+	getOutputInformations();
 	
 	int rslt = beginConsoleInput();
 	

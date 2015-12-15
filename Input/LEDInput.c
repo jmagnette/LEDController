@@ -9,6 +9,8 @@ static void printBlinkingExample();
 static void printCyclingExample();
 static void printRandomFillingExample();
 
+
+
 int beginConsoleInput()
 {
 	int userchoice = 0;

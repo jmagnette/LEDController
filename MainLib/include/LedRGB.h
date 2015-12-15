@@ -1,6 +1,25 @@
 #ifndef LEDRGB_H
 #define LEDRGB_H
 #include "Byte.h"
+
+enum E_CommMessage
+{
+	LED_SIZE = 0x53495A45,
+	LED_RESET = 0x52534554,
+	LED_SET = 0x534C4544
+};
+
+enum E_CommError
+{
+	COM_SUCCESS = 0,
+	COM_DEVICE_CANNOT_CREATE,
+	COM_SOCKET_CANNOT_OPEN,
+	COM_SOCKET_CANNOT_BIND,
+	COM_SOCKET_CANNOT_LISTEN,
+	COM_SOCKET_CANNOT_CONNECT,
+	COM_SOCKET_ERROR
+};
+
 struct RGB{
 	Byte red;
 	Byte green;

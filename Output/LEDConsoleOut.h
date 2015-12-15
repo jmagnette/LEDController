@@ -5,6 +5,9 @@
 #define _POSIX_C_SOURCE 200809L
 #endif
 
+#define MAX_READ_SIZE 10
+#define MAX_WRITE_SIZE 10
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -12,20 +15,12 @@
 #include "../MainLib/include/LedRGB.h"
 
 #include "../MainLib/include/pico_stack.h"
-#include "../MainLib/include/pico_socket.h"
+#include "../MainLib/include/pico_dev_vde.h"
 #include "../MainLib/include/pico_ipv4.h"
+#include "../MainLib/include/pico_socket.h"
 
 #define DEFAULT_ROW_NUMBER  3
 #define DEFAULT_COLUMN_NUMBER  10
-
-enum E_ConsoleError
-{
-	CSL_SUCCESS = 0,
-	CSL_SOCKET_CANNOT_OPEN,
-	CSL_SOCKET_CANNOT_BIND,
-	CSL_SOCKET_CANNOT_LISTEN,
-	CSL_SOCKET_ERROR
-};
 
 /*
 	Function that will handle all the cleanup task to do on the output side (free memory)
