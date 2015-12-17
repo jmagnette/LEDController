@@ -90,7 +90,18 @@ void translateToOutput(struct AddressableLED** sequence, unsigned short sequence
 	uint16_t address = 0;
 	for (int index = 0; index < sequenceLength; index ++)
 	{
-		if (sequence[index]->address.row < numberOfRows && sequence[index]->address.column < numberOfColumns)
+		// special address for full line change
+		if (USHRT_MAX == sequence[index]->address.row && USHRT_MAX == sequence[index]->address.column)
+		{
+			strcpy(writeBuffer, "RSET");
+
+			writeBuffer[4] = sequence[index]->ledValue.red;
+			writeBuffer[5] = sequence[index]->ledValue.green;
+			writeBuffer[6] = sequence[index]->ledValue.blue;
+
+			bytesToWrite = 7;
+		}
+		else if (sequence[index]->address.row < numberOfRows && sequence[index]->address.column < numberOfColumns)
 		{
 			strcpy(writeBuffer, "SLED");
 			address = (sequence[index]->address.row * numberOfColumns) + sequence[index]->address.column;
@@ -102,12 +113,12 @@ void translateToOutput(struct AddressableLED** sequence, unsigned short sequence
 			writeBuffer[8] = sequence[index]->ledValue.blue;
 
 			bytesToWrite = 9;
+		}
 
-			while (0 < bytesToWrite)
-			{
-				pico_stack_tick();
-				nanosleep(&(struct timespec){0,5*1000000},NULL);
-			}
+		while (0 < bytesToWrite)
+		{
+			pico_stack_tick();
+			nanosleep(&(struct timespec){0,5*1000000},NULL);
 		}
 	} 
 

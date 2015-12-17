@@ -263,18 +263,27 @@ int extractRGBFromString(char* jSONString, struct LEDSequence*** outSequences)
 								char *subString = strtok(addrString, "x");
 								if (NULL == subString)
 								{
-									incorrectJSONHandler("Addr with form : axb", &tokenList, tokenIndex + 1);
+									incorrectJSONHandler("Addr with form : axb or ALL", &tokenList, tokenIndex + 1);
 									return INVALID_JSON;
 								}
-								tmpAdrrLed.address.row = (unsigned short) atoi(subString);
-
-								subString = strtok(NULL, "x");
-								if (NULL == subString)
+								if (0 == strcmp("ALL", subString))
 								{
-									incorrectJSONHandler("Addr with form : axb", &tokenList, tokenIndex + 1);
-									return INVALID_JSON;
+									// Reset is assigned to address 65535 x 65535 (that cannot be used for something else (and should not))
+									tmpAdrrLed.address.row = USHRT_MAX;
+									tmpAdrrLed.address.column = USHRT_MAX;
 								}
-								tmpAdrrLed.address.column = (unsigned short) atoi(subString);
+								else
+								{
+									tmpAdrrLed.address.row = (unsigned short) atoi(subString);
+
+									subString = strtok(NULL, "x");
+									if (NULL == subString)
+									{
+										incorrectJSONHandler("Addr with form : axb", &tokenList, tokenIndex + 1);
+										return INVALID_JSON;
+									}
+									tmpAdrrLed.address.column = (unsigned short) atoi(subString);
+								}
 
 								//extraction of the Red value
 								nbrOfChar = tokenList[tokenIndex + 3].end - tokenList[tokenIndex + 3].start;

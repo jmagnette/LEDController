@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 
 #include <time.h>
 #include "../MainLib/include/LedRGB.h"
