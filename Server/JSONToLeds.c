@@ -178,12 +178,14 @@ int extractRGBFromString(char* jSONString, struct LEDSequence*** outSequences)
 			printf("- Name: %.*s\n", tokenList[tokenIndex + 1].end-tokenList[tokenIndex + 1].start,
 					jSONString + tokenList[tokenIndex + 1].start);
 			++tokenIndex;
+			// Do something with the name ?
 		}
 		else if (0 == strTokenCompare(jSONString, &tokenList[tokenIndex], "Size"))
 		{
 			printf("- Size: %.*s\n", tokenList[tokenIndex + 1].end-tokenList[tokenIndex + 1].start,
 								jSONString + tokenList[tokenIndex + 1].start);
 			++tokenIndex;
+			// Do something with the size ?
 		}
 		else if (0 == strTokenCompare(jSONString, &tokenList[tokenIndex], "Seq"))
 		{

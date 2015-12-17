@@ -28,12 +28,13 @@ endif
 all: LEDParser LEDSim clean
 
 
-LEDMicro:
+LEDSTM32: $(OUT)LEDConsoleOut.o $(OUT)WS2812b_STM32F4Disc.c $(LIB)libpicotcp.a
+	$(CC) $^ -o $@ $(CFLAGS) $(LDFLAGS) -lpicotcp
 
 LEDParser: LEDTest.o $(MID)LEDServer.o $(IN)LEDInput.o $(MID)JSONToLeds.o $(LIB)libjsmn.a $(LIB)libpicotcp.a $(MOD)pico_dev_vde.o
 	$(CC) $^ -o $@ $(CFLAGS) $(LDFLAGS) -ljsmn -lpicotcp -lvdeplug
 	
-LEDSim: $(OUT)LEDConsoleOut.o $(LIB)libpicotcp.a $(MOD)pico_dev_vde.o
+LEDSim: $(OUT)LEDConsoleOut.o $(OUT)SimulatedLED.c $(LIB)libpicotcp.a $(MOD)pico_dev_vde.o
 	$(CC) $^ -o $@ $(CFLAGS) $(LDFLAGS) -lpicotcp -lvdeplug
 
 	
