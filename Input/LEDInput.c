@@ -16,6 +16,7 @@ int beginConsoleInput()
 	int userchoice = 0;
 	while ((userchoice = chooseInput() ) >= 0)
 	{
+		system("clear");
 		/*according to the result of chooseInput, execute next task*/
 		switch (userchoice)
 		{
@@ -48,6 +49,7 @@ int chooseInput()
 	int inputChoice = 0;
 	char userInput[100];
 
+	system("clear");
 	printf("###############################################\n");
 	printf("Please choose which type of input you are going to use.\n");
 	printf("the choices are the following:\n");
@@ -109,6 +111,7 @@ void exampleMenu()
 					printRandomFillingExample();
 					break;
 			}
+			system("clear");
 		}
 	}
 }
@@ -118,6 +121,7 @@ void manualMenu()
 	char userInput[100];
 	int inputChoice = 0;
 	
+	system("clear");
 	while (inputChoice >= 0)
 	{
 		printf("___Manual_____________________________________\n");
@@ -157,6 +161,7 @@ void fileMenu()
 {
 	char userInput[100];
 
+	system("clear");
 	printf("___File input_________________________________\n");
 	printf("Please enter the path of the desired file (with extension):\n");
 	printf("(or enter empty string to go back to menu)\n");
@@ -291,9 +296,15 @@ void printRandomFillingExample()
 
 	while(0 < nbrOfLEDsToGenerate)
 	{
-		randomColor.red = rand() % 206 + 50;
-		randomColor.green = rand() % 206 + 50;
-		randomColor.blue = rand() % 206 + 50;
+		randomColor.red = rand() % 256;
+		randomColor.green = rand() % 256;
+		randomColor.blue = rand() % 256;
+		if (30 > (randomColor.red + randomColor.green + randomColor.blue))
+		{
+			randomColor.red = 15;
+			randomColor.green = 15;
+			randomColor.blue = 15;
+		}
 
 		for (unsigned short position = 0; position < nbrOfLEDsToGenerate; ++position )
 		{

@@ -14,6 +14,7 @@ static unsigned char macAddr[6] = {
 
 static unsigned char responseFromOutput = 0;
 static unsigned char isCommunicationInitialized = 0;
+static unsigned char isSocketOpened = 0;
 
 static char readBuffer[MAX_READ_SIZE];
 static char writeBuffer[MAX_WRITE_SIZE];
@@ -26,7 +27,12 @@ static int processSocketReading(struct pico_socket *sender);
 
 void serverClose()
 {
-	//outputCleanUp();
+	pico_socket_close(outputSocket);
+	while (0 != isSocketOpened)
+	{
+		pico_stack_tick();
+		nanosleep(&(struct timespec){0,5*1000000},NULL);
+	}
 }
 
 int getOutputInformations()
@@ -70,7 +76,6 @@ int getOutputInformations()
 		pico_stack_tick();
 		nanosleep(&(struct timespec){0,5*1000000},NULL);
 	}
-	pico_stack_tick();
 
 	printf("Output size is %d x %d\n", numberOfRows, numberOfColumns);
 
@@ -79,13 +84,14 @@ int getOutputInformations()
 
 void translateToOutput(struct AddressableLED** sequence, unsigned short sequenceLength)
 {
-	connectToOutput();
+	if (0 == isSocketOpened)
+		connectToOutput();
+
 	uint16_t address = 0;
 	for (int index = 0; index < sequenceLength; index ++)
 	{
 		if (sequence[index]->address.row < numberOfRows && sequence[index]->address.column < numberOfColumns)
 		{
-			responseFromOutput = 0;
 			strcpy(writeBuffer, "SLED");
 			address = (sequence[index]->address.row * numberOfColumns) + sequence[index]->address.column;
 			writeBuffer[4] = address >> 8;
@@ -97,15 +103,22 @@ void translateToOutput(struct AddressableLED** sequence, unsigned short sequence
 
 			bytesToWrite = 9;
 
-			while (0 == responseFromOutput)
+			while (0 < bytesToWrite)
 			{
 				pico_stack_tick();
 				nanosleep(&(struct timespec){0,5*1000000},NULL);
 			}
 		}
 	} 
-	pico_socket_close(outputSocket);
-	pico_stack_tick();
+
+	strcpy(writeBuffer, "UPDT");
+	bytesToWrite = 4;
+	while (0 < bytesToWrite)
+	{
+		pico_stack_tick();
+		nanosleep(&(struct timespec){0,5*1000000},NULL);
+	}
+
 }
 
 unsigned short getRowSize()
@@ -126,10 +139,6 @@ void connectToOutput()
 	outputSocket = pico_socket_open(PICO_PROTO_IPV4, PICO_PROTO_TCP, &outputCommunication);
 	if (!outputSocket)
 		exit(COM_SOCKET_CANNOT_OPEN);
-	printf("Socket opened\n");
-
-	int yes = 1;
-	pico_socket_setoption(outputSocket, PICO_TCP_NODELAY, &yes);
 
 	ret = pico_socket_connect(outputSocket, &destIpv4Addr, port);
 	if (0 != ret)
@@ -138,7 +147,11 @@ void connectToOutput()
 		exit(COM_SOCKET_CANNOT_CONNECT);
 	}
 
-	printf("Connection initialized\n");
+	while (0 == isSocketOpened)
+	{
+		pico_stack_tick();
+		nanosleep(&(struct timespec){0,5*1000000},NULL);
+	}
 }
 
 void initCommunication()
@@ -166,27 +179,34 @@ void outputCommunication(uint16_t event, struct pico_socket *sender)
 	if (event & PICO_SOCK_EV_RD)
 	{
 		if ( 0 > processSocketReading(sender))
-			exit(5);
-		responseFromOutput = 1;
+		{
+			printf("Socket Error received when reading: %s. Bailing out.\n", strerror(pico_err));
+			exit(COM_SOCKET_ERROR_READ);
+		}
 	}
 
 	if (event & PICO_SOCK_EV_CONN) {
-	    printf("Connection established with server.\n");
+		isSocketOpened = 1;
+		char ipAddress[16];
+		pico_ipv4_to_string(ipAddress, sender->remote_addr.ip4.addr);
+		printf("Connection established with server. address = %s:%d\n", ipAddress , short_be(sender->remote_port));
 	}
 
 	if (event & PICO_SOCK_EV_FIN) {
-	    printf("Socket closed. Exit normally. \n");
+		isSocketOpened = 0;
+		char ipAddress[16];
+		pico_ipv4_to_string(ipAddress, sender->remote_addr.ip4.addr);
+	    printf("Socket closed. Exit normally. address = %s:%d\n", ipAddress , short_be(sender->remote_port));
 	}
 
 	if (event & PICO_SOCK_EV_ERR) {
 	    printf("Socket error received: %s. Bailing out.\n", strerror(pico_err));
-	    exit(1);
+	    exit(COM_SOCKET_ERROR);
 	}
 
 	if (event & PICO_SOCK_EV_CLOSE) {
 	   printf("Socket received close from peer - Wrong case if not all client data sent!\n");
 	   pico_socket_close(sender);
-	   return;
 	}
 
 	if (event & PICO_SOCK_EV_WR) {
@@ -194,7 +214,10 @@ void outputCommunication(uint16_t event, struct pico_socket *sender)
 		{
 			w = pico_socket_write(sender, &writeBuffer, bytesToWrite);
 			if (w < 0)
-				exit(5);
+			{
+				printf("Socket error received when writing: %s. Bailing out.\n", strerror(pico_err));
+				exit(COM_SOCKET_ERROR_WRITE);
+			}
 			strcpy(writeBuffer, ""); //emptying buffer
 			bytesToWrite = 0;
 		}
@@ -206,7 +229,7 @@ static int processSocketReading(struct pico_socket *sender)
 	int bytesRead = 0;
 	bytesRead = pico_socket_read(sender, &readBuffer, 4); //Reading message type first
 
-	if (0 > bytesRead)
+	if (0 >= bytesRead)
 		return bytesRead;
 
 	uint32_t command = ((uint32_t)readBuffer[0] << 24) + ((uint32_t)readBuffer[1] << 16)
@@ -222,8 +245,8 @@ static int processSocketReading(struct pico_socket *sender)
 			numberOfRows = ((uint16_t)readBuffer[0] << 8) + (uint16_t)readBuffer[1];
 			numberOfColumns = ((uint16_t)readBuffer[2] << 8) + (uint16_t)readBuffer[3];
 
-			printf("Output size is %d x %d\n", numberOfRows, numberOfColumns);
-			pico_socket_close(sender);
+			//pico_socket_close(sender);
+			responseFromOutput = 1;
 
 			break;
 

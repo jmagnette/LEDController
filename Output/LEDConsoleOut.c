@@ -18,7 +18,7 @@ static char writeBuffer[MAX_WRITE_SIZE];
 static uint8_t bytesToWrite = 0;
 
 static uint16_t port;
-static char isSocketClosed = 0;
+static char isSocketOpened = 0;
 
 
 // Function used to set the local size of the 'simulated LED strip' (used for display)
@@ -40,6 +40,7 @@ int main()
 	rowLength = DEFAULT_ROW_NUMBER;
 	columnLength = DEFAULT_COLUMN_NUMBER;
 
+	system("clear");
 	printf("Before we go further, please enter the size of the LED grid you are going to use in the form 'a b':\n");
 	printf("(grid size formatted as (a x b), a = 1 for a line. Default is %d x %d, enter nothing to keep default)\n", DEFAULT_ROW_NUMBER, DEFAULT_COLUMN_NUMBER);
 	char userInput[100];
@@ -91,10 +92,7 @@ int startNetworkRoutine()
 	if (!ledSocket)
 		exit(COM_SOCKET_CANNOT_OPEN);
 	printf("Socket opened\n");
-	isSocketClosed = 0;
-
-	int yes = 1;
-	pico_socket_setoption(ledSocket, PICO_TCP_NODELAY, &yes);
+	isSocketOpened = 1;
 
 	ret = pico_socket_bind(ledSocket, &myIpv4Addr, &port);
 	if (0 != ret)
@@ -109,7 +107,7 @@ int startNetworkRoutine()
 		exit(COM_SOCKET_CANNOT_LISTEN);
 	printf("Socket listened\n");
 
-	while(0 == isSocketClosed)
+	while(1 == isSocketOpened)
 	{
 		pico_stack_tick();
 		nanosleep(&(struct timespec){0,5*1000000},NULL);
@@ -129,7 +127,10 @@ void ledCommunication(uint16_t event, struct pico_socket *sender)
 	if (event & PICO_SOCK_EV_RD)
 	{
 		if ( 0 > processSocketReading(sender))
-			exit(5);
+		{
+			printf("Socket Error received when reading: %s. Bailing out.\n", strerror(pico_err));
+			exit(COM_SOCKET_ERROR_READ);
+		}
 	}
 
 	if (event & PICO_SOCK_EV_WR)
@@ -138,7 +139,11 @@ void ledCommunication(uint16_t event, struct pico_socket *sender)
 		{
 			w = pico_socket_write(sender, &writeBuffer, bytesToWrite);
 			if (w < 0)
-				exit(5);
+			{
+				printf("Socket Error received when writing: %s. Bailing out.\n", strerror(pico_err));
+				exit(COM_SOCKET_ERROR_WRITE);
+			}
+
 			strcpy(writeBuffer, ""); //emptying buffer
 			bytesToWrite = 0;
 		}
@@ -148,8 +153,7 @@ void ledCommunication(uint16_t event, struct pico_socket *sender)
 	{
 		/* accept new connection request */
 		accepted_socket = pico_socket_accept(sender, &origin, &locPort);
-		int yes = 1;
-		pico_socket_setoption(accepted_socket, PICO_TCP_NODELAY, &yes);
+
 		/* convert peer IP to string */
 		pico_ipv4_to_string(peer, origin.addr);
 
@@ -175,8 +179,6 @@ void ledCommunication(uint16_t event, struct pico_socket *sender)
 
 	if (event & PICO_SOCK_EV_CLOSE) {
 		printf("Socket received close from peer.\n");
-		// when peer closes the socket, it is time to update the LEDs
-		printLedGrid();
 		pico_socket_close(sender);
 	}
 }
@@ -186,7 +188,7 @@ static int processSocketReading(struct pico_socket *sender)
 	int bytesRead = 0;
 	bytesRead = pico_socket_read(sender, &readBuffer, 4); //Reading message type first
 
-	if (0 > bytesRead)
+	if (0 >= bytesRead)
 		return bytesRead;
 
 	readBuffer[4] = '\0';
@@ -200,7 +202,9 @@ static int processSocketReading(struct pico_socket *sender)
 	switch (command)
 	{
 		case LED_SIZE:
-			//Nothing else to read than the SIZE command it self
+			//Nothing else to read than the SIZE command itself
+
+			//Answers with the actual size
 			strcpy(writeBuffer, "SIZE");
 			writeBuffer[4] = rowLength >> 8;
 			writeBuffer[5] = rowLength;
@@ -222,9 +226,6 @@ static int processSocketReading(struct pico_socket *sender)
 			rgbValue.blue = readBuffer[2];
 
 			initRGBListTo(outputGrid,rgbValue);
-
-			strcpy(writeBuffer, "RSET");
-			bytesToWrite = 4;
 			break;
 
 		case LED_SET:
@@ -238,9 +239,10 @@ static int processSocketReading(struct pico_socket *sender)
 			rgbValue.blue = readBuffer[4];
 
 			setLed(rgbAddress, rgbValue);
+			break;
 
-			strcpy(writeBuffer, "SLED");
-			bytesToWrite = 4;
+		case LED_UPDATE:
+			printLedGrid();
 			break;
 
 		default:
@@ -262,7 +264,7 @@ void outputCleanUp()
 
 	free(outputGrid);
 	outputGrid = NULL;
-	isSocketClosed = 1;
+	isSocketOpened = 0;
 }
 
 void setSimulatedSize(unsigned short row, unsigned short column)
