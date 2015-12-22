@@ -2,8 +2,6 @@
 
 #define NUMBER_OF_LED  300
 
-//
-
 /*
  * Structure that reflects what has to be done to be able to use DMA and PWM to transmit the RGB value to the ws2812b
  * The transmission order of the RGB value for the ws2812b is green then red then blue (transmitting higher bit first)
@@ -38,6 +36,9 @@ struct WS2812bLED{
 };
 
 static struct WS2812bLED* outputGrid = NULL;
+static uint32_t bufferSize = 0;
+
+static void init_timer_dma();
 
 
 
@@ -49,6 +50,15 @@ int setupNetwork(struct pico_ip4* obtainedIpv4)
 
 void initLedGrid()
 {
+	// the buffersize is calculated by multiplying the number of LEDs we have by the actual size needed in memory to store the value for the DMA (24 bytes per LED)
+	// at which we need to add the extra down time specified in the ws2812b datasheet (at least 50 µs)
+	// This down time will be extra bytes added at the end of the array
+	// We obtain the number by dividing 50000ns by 1250ns (see datasheet) and adding 2 more to be sure to wait at least 50µs
+
+	uint8_t extraWait = 50000 / 1250 + 2;
+	bufferSize = NUMBER_OF_LED * sizeof(struct WS2812bLED) + extraWait * sizeof(Byte);
+	outputGrid = malloc(bufferSize);
+
 	// TO DO
 }
 
@@ -79,4 +89,14 @@ void cleanLedGrid()
 {
 	free(outputGrid);
 	outputGrid = NULL;
+}
+
+
+/*
+ * Decided to go with timer 4_channel 1 and DMA1 so that it uses the stream 0 of the DMA
+ * Will use byte transfer with DMA
+ */
+void init_timer_dma()
+{
+
 }
